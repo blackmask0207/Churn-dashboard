@@ -103,7 +103,7 @@ def render_dashboard(f, tab_id):
         st.markdown("---")
 
     # Layout
-    left_col, right_col = st.columns([1.8, 1])
+    left_col, right_col = st.columns([1.3, 1])
 
     with left_col:
         st.subheader("Hoạt động của Khách hàng - Tổng quan")
@@ -286,7 +286,7 @@ def render_dashboard(f, tab_id):
                          .background_gradient(subset=["Thực tăng", "Tổng tích lũy"], cmap="Blues", text_color_threshold=0.5)
                          .format("{:,.0f}"))
                          
-            st.dataframe(styled_df, use_container_width=True, height=850)
+            st.dataframe(styled_df, use_container_width=True, hide_index=True, height=850)
 
 # Create Tabs
 tab1, tab2 = st.tabs(["Khách hàng cá nhân (Phổ thông, VIP, VVIP)", "Khách hàng doanh nghiệp (Startup, SME, Enterprise)"])
