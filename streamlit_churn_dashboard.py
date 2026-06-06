@@ -158,7 +158,7 @@ def render_dashboard(f, tab_id):
         ))
         
         fig1.update_layout(
-            barmode="overlay",
+            barmode="group",
             paper_bgcolor="rgba(0,0,0,0)", 
             plot_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(
@@ -231,7 +231,7 @@ def render_dashboard(f, tab_id):
         ))
         fig_inset.add_trace(go.Bar(
             x=totals_by_reg["Region"], 
-            y=-totals_by_reg["Lost"], 
+            y=totals_by_reg["Lost"], 
             name="Giảm", 
             marker_color=COLOR_LOSS,
             text=[f"{v:,.0f}" for v in totals_by_reg["Lost"]],
@@ -247,7 +247,7 @@ def render_dashboard(f, tab_id):
             textposition="middle right"
         ))
         fig_inset.update_layout(
-            barmode="relative", 
+            barmode="group", 
             paper_bgcolor="rgba(0,0,0,0)", 
             plot_bgcolor="rgba(0,0,0,0)",
             height=350,
