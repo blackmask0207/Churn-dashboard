@@ -2,3 +2,4 @@ streamlit
 pandas
 plotly
 Jinja2
+matplotlib
