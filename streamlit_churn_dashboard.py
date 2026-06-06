@@ -121,31 +121,31 @@ def render_dashboard(f, tab_id):
         
         fig1 = go.Figure()
         
-        # Gain Bar (Grey)
+        # Gain Bar (Pastel Green)
         fig1.add_trace(go.Bar(
             x=monthly["Month"],
             y=monthly["New_Customers"],
             base=monthly["Prev_Running_Total"],
-            marker_color="#2ecc71", # Bright green
+            marker_color="#A8E6CF", 
             name="Tăng"
         ))
         
-        # Loss Bar (Red)
+        # Loss Bar (Pastel Red)
         fig1.add_trace(go.Bar(
             x=monthly["Month"],
             y=-monthly["Lost_Customers"],
             base=monthly["Prev_Running_Total"] + monthly["New_Customers"],
-            marker_color="#e74c3c", # Bright red
+            marker_color="#FF8B94", 
             name="Giảm"
         ))
         
-        # Net Line (Blue)
+        # Net Line (Pastel Blue)
         fig1.add_trace(go.Scatter(
             x=monthly["Month"],
             y=monthly["Running_Total"],
             mode="lines+markers+text",
-            line=dict(color="#3498db", width=3),
-            marker=dict(size=8, color="#3498db"),
+            line=dict(color="#B0C4DE", width=3),
+            marker=dict(size=8, color="#B0C4DE"),
             name="Thực tăng",
             text=[f"{val:,.0f}" for val in monthly["Running_Total"]],
             textposition="bottom right"
@@ -153,6 +153,8 @@ def render_dashboard(f, tab_id):
         
         fig1.update_layout(
             barmode="overlay",
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(
                 tickformat="%m/%Y",
                 showgrid=False
@@ -185,7 +187,7 @@ def render_dashboard(f, tab_id):
         fig2 = px.line(
             reg_monthly, x="Month", y="Running_Total", color="Region", 
             markers=True,
-            color_discrete_sequence=["#3498db", "#f1c40f", "#e74c3c", "#2ecc71"],
+            color_discrete_sequence=["#B0C4DE", "#FFDAB9", "#FF8B94", "#A8E6CF"],
             labels={"Running_Total": "Khách hàng thực tăng", "Month": ""}
         )
         # Add text to the last point of each line
@@ -214,7 +216,7 @@ def render_dashboard(f, tab_id):
             x=totals_by_reg["Region"], 
             y=totals_by_reg["Gained"], 
             name="Tăng", 
-            marker_color="#2ecc71",
+            marker_color="#A8E6CF",
             text=[f"{v:,.0f}" for v in totals_by_reg["Gained"]],
             textposition="inside"
         ))
@@ -222,7 +224,7 @@ def render_dashboard(f, tab_id):
             x=totals_by_reg["Region"], 
             y=-totals_by_reg["Lost"], 
             name="Giảm", 
-            marker_color="#e74c3c",
+            marker_color="#FF8B94",
             text=[f"{v:,.0f}" for v in totals_by_reg["Lost"]],
             textposition="inside"
         ))
@@ -230,13 +232,15 @@ def render_dashboard(f, tab_id):
             x=totals_by_reg["Region"], 
             y=totals_by_reg["Net"], 
             mode="markers+text", 
-            marker=dict(size=16, color="#3498db"), 
+            marker=dict(size=16, color="#B0C4DE"), 
             name="Thực tăng",
             text=[f"{v:,.0f}" for v in totals_by_reg["Net"]],
             textposition="middle right"
         ))
         fig_inset.update_layout(
             barmode="relative", 
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)",
             height=350,
             margin=dict(l=0, r=0, t=30, b=0),
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
@@ -250,6 +254,8 @@ def render_dashboard(f, tab_id):
             st.plotly_chart(fig_inset, use_container_width=True, key=f"fig_inset_{tab_id}")
         with col_line:
             fig2.update_layout(
+                paper_bgcolor="rgba(0,0,0,0)", 
+                plot_bgcolor="rgba(0,0,0,0)",
                 xaxis_tickformat="%m/%Y", 
                 height=350, 
                 margin=dict(l=40, r=80, t=30, b=0),
