@@ -267,24 +267,25 @@ def render_dashboard(f, tab_id):
             pivot = reg_monthly[["Region", "Month", "New_Customers", "Lost_Customers", "Net_Customers", "Running_Total"]].copy()
             pivot["Month"] = pivot["Month"].dt.strftime("%m/%Y")
             pivot.rename(columns={
+                "Region": "Khu vực",
+                "Month": "Tháng",
                 "New_Customers": "Khách hàng Mới", 
                 "Lost_Customers": "Khách hàng Rời bỏ", 
                 "Net_Customers": "Thực tăng", 
                 "Running_Total": "Tổng tích lũy"
             }, inplace=True)
             
-            pivot.set_index(["Region", "Month"], inplace=True)
-            
             # Convert 'Lost' to negative for accurate heatmap representation
             pivot_styled = pivot.copy()
             pivot_styled["Khách hàng Rời bỏ"] = -pivot_styled["Khách hàng Rời bỏ"]
             
             # We apply styling with text_color_threshold for optimal contrast
+            numeric_cols = ["Khách hàng Mới", "Khách hàng Rời bỏ", "Thực tăng", "Tổng tích lũy"]
             styled_df = (pivot.style
                          .background_gradient(subset=["Khách hàng Mới"], cmap="Greens", text_color_threshold=0.5)
                          .background_gradient(subset=["Khách hàng Rời bỏ"], cmap="Reds", text_color_threshold=0.5)
                          .background_gradient(subset=["Thực tăng", "Tổng tích lũy"], cmap="Blues", text_color_threshold=0.5)
-                         .format("{:,.0f}"))
+                         .format("{:,.0f}", subset=numeric_cols))
                          
             st.dataframe(styled_df, use_container_width=True, hide_index=True, height=850)
 
