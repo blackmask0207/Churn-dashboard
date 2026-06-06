@@ -8,6 +8,12 @@ st.set_page_config(page_title="Dashboard Quản trị Khách hàng Rời bỏ", 
 
 st.title("Phân tích Khách hàng Rời bỏ")
 
+# Color Palette exactly matching the book
+COLOR_GAIN = "#C0C0C0"  # Grey
+COLOR_LOSS = "#F19C99"  # Salmon/Red
+COLOR_NET = "#3A7596"   # Muted Blue
+COLOR_MARKER = "#F39C12" # Orange for line markers
+
 @st.cache_data(show_spinner="Đang tải dữ liệu và tính toán chỉ số...")
 def load_data():
     data_dir = "star_schema_data"
@@ -121,31 +127,31 @@ def render_dashboard(f, tab_id):
         
         fig1 = go.Figure()
         
-        # Gain Bar (Pastel Green)
+        # Gain Bar
         fig1.add_trace(go.Bar(
             x=monthly["Month"],
             y=monthly["New_Customers"],
             base=monthly["Prev_Running_Total"],
-            marker_color="#A8E6CF", 
+            marker_color=COLOR_GAIN, 
             name="Tăng"
         ))
         
-        # Loss Bar (Pastel Red)
+        # Loss Bar
         fig1.add_trace(go.Bar(
             x=monthly["Month"],
             y=-monthly["Lost_Customers"],
             base=monthly["Prev_Running_Total"] + monthly["New_Customers"],
-            marker_color="#FF8B94", 
+            marker_color=COLOR_LOSS, 
             name="Giảm"
         ))
         
-        # Net Line (Pastel Blue)
+        # Net Line
         fig1.add_trace(go.Scatter(
             x=monthly["Month"],
             y=monthly["Running_Total"],
             mode="lines+markers+text",
-            line=dict(color="#B0C4DE", width=3),
-            marker=dict(size=8, color="#B0C4DE"),
+            line=dict(color=COLOR_NET, width=3),
+            marker=dict(size=8, color=COLOR_NET),
             name="Thực tăng",
             text=[f"{val:,.0f}" for val in monthly["Running_Total"]],
             textposition="bottom right"
@@ -187,9 +193,12 @@ def render_dashboard(f, tab_id):
         fig2 = px.line(
             reg_monthly, x="Month", y="Running_Total", color="Region", 
             markers=True,
-            color_discrete_sequence=["#B0C4DE", "#FFDAB9", "#FF8B94", "#A8E6CF"],
+            color_discrete_sequence=[COLOR_NET], # All lines same blue color like in the book
             labels={"Running_Total": "Khách hàng thực tăng", "Month": ""}
         )
+        # Update markers to orange like in the book
+        fig2.update_traces(marker=dict(color=COLOR_MARKER, size=6))
+        
         # Add text to the last point of each line
         for i, region in enumerate(reg_monthly["Region"].unique()):
             region_data = reg_monthly[reg_monthly["Region"] == region]
@@ -216,7 +225,7 @@ def render_dashboard(f, tab_id):
             x=totals_by_reg["Region"], 
             y=totals_by_reg["Gained"], 
             name="Tăng", 
-            marker_color="#A8E6CF",
+            marker_color=COLOR_GAIN,
             text=[f"{v:,.0f}" for v in totals_by_reg["Gained"]],
             textposition="inside"
         ))
@@ -224,7 +233,7 @@ def render_dashboard(f, tab_id):
             x=totals_by_reg["Region"], 
             y=-totals_by_reg["Lost"], 
             name="Giảm", 
-            marker_color="#FF8B94",
+            marker_color=COLOR_LOSS,
             text=[f"{v:,.0f}" for v in totals_by_reg["Lost"]],
             textposition="inside"
         ))
@@ -232,7 +241,7 @@ def render_dashboard(f, tab_id):
             x=totals_by_reg["Region"], 
             y=totals_by_reg["Net"], 
             mode="markers+text", 
-            marker=dict(size=16, color="#B0C4DE"), 
+            marker=dict(size=16, color=COLOR_NET), 
             name="Thực tăng",
             text=[f"{v:,.0f}" for v in totals_by_reg["Net"]],
             textposition="middle right"
@@ -285,12 +294,12 @@ def render_dashboard(f, tab_id):
             pivot_styled = pivot.copy()
             pivot_styled["Khách hàng Rời bỏ"] = -pivot_styled["Khách hàng Rời bỏ"]
             
-            # We apply styling with text_color_threshold for optimal contrast
             numeric_cols = ["Khách hàng Mới", "Khách hàng Rời bỏ", "Thực tăng", "Tổng tích lũy"]
+            
+            # Apply styling matching the book: Grey for Gain, Red for Loss, no background for Net and Total
             styled_df = (pivot.style
-                         .background_gradient(subset=["Khách hàng Mới"], cmap="Greens", text_color_threshold=0.5)
+                         .background_gradient(subset=["Khách hàng Mới"], cmap="Greys", text_color_threshold=0.5)
                          .background_gradient(subset=["Khách hàng Rời bỏ"], cmap="Reds", text_color_threshold=0.5)
-                         .background_gradient(subset=["Thực tăng", "Tổng tích lũy"], cmap="Blues", text_color_threshold=0.5)
                          .format("{:,.0f}", subset=numeric_cols))
                          
             st.dataframe(styled_df, use_container_width=True, hide_index=True, height=850)
