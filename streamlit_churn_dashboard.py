@@ -3,6 +3,7 @@ import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
 import os
+import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Dashboard Quản trị Khách hàng Rời bỏ", layout="wide")
 
@@ -300,24 +301,24 @@ def render_dashboard(f, tab_id):
                          .background_gradient(subset=["Khách hàng Rời bỏ"], cmap="Reds", text_color_threshold=0.5)
                          .format("{:,.0f}", subset=numeric_cols))
                          
-            # We use raw HTML here because Streamlit's native elements sometimes drop rowspan
+            # We use components.html to guarantee that Streamlit does not strip the Pandas Styler CSS
             html_table = styled_df.to_html()
             
             css = """
             <style>
-            .custom-table table {
+            table {
                 width: 100%;
                 border-collapse: collapse;
                 font-family: sans-serif;
                 color: #595959;
                 font-size: 14px;
             }
-            .custom-table th, .custom-table td {
+            th, td {
                 border: 1px solid #e0e0e0;
                 padding: 8px;
                 text-align: right;
             }
-            .custom-table thead th {
+            thead th {
                 background-color: #f5f5f5;
                 font-weight: bold;
                 text-align: center;
@@ -325,14 +326,14 @@ def render_dashboard(f, tab_id):
                 top: 0;
                 z-index: 1;
             }
-            .custom-table tbody th {
+            tbody th {
                 text-align: left; 
                 background-color: #ffffff;
             }
             </style>
             """
             
-            st.markdown(css + f'<div class="custom-table" style="height: 850px; overflow-y: auto;">{html_table}</div>', unsafe_allow_html=True)
+            components.html(css + html_table, height=850, scrolling=True)
 
 # Create Tabs
 tab1, tab2 = st.tabs(["Khách hàng cá nhân (Phổ thông, VIP, VVIP)", "Khách hàng doanh nghiệp (Startup, SME, Enterprise)"])
