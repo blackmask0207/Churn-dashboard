@@ -44,6 +44,25 @@ def load_data():
     
     df["Month"] = pd.to_datetime(df["Month"])
     df["Last_Updated_Date"] = pd.to_datetime(df["Last_Updated_Date"])
+    
+    product_translation = {
+        'Investment': 'Đầu tư', 
+        'Personal Loan': 'Vay tiêu dùng', 
+        'Home Loan': 'Vay mua nhà', 
+        'Saving': 'Gửi tiết kiệm', 
+        'Credit Card': 'Thẻ tín dụng', 
+        'Debit Card': 'Thẻ ghi nợ', 
+        'Life Insurance': 'Bảo hiểm nhân thọ', 
+        'Health Insurance': 'Bảo hiểm sức khỏe', 
+        'Wealth Management': 'Quản lý gia sản', 
+        'Auto Loan': 'Vay mua ô tô', 
+        'Crypto': 'Tiền điện tử', 
+        'Forex': 'Ngoại hối', 
+        'Mutual Funds': 'Quỹ tương hỗ', 
+        'Bonds': 'Trái phiếu'
+    }
+    df["Product"] = df["Product"].map(product_translation).fillna(df["Product"])
+    
     return df
 
 df = load_data()
@@ -405,11 +424,21 @@ tab1, tab2 = st.tabs(["Khách hàng cá nhân (Phổ thông, VIP, VVIP)", "Khác
 with tab1:
     tab1_segments = ["Mass", "VIP", "VVIP"]
     selected_segments_1 = st.multiselect("Lọc phân khúc (Cá nhân)", tab1_segments, default=tab1_segments, key="seg_tab1")
-    f_tab1 = f_base[f_base["Segment"].isin(selected_segments_1)]
+    f_tab1_seg = f_base[f_base["Segment"].isin(selected_segments_1)]
+    
+    tab1_prods = sorted(f_tab1_seg["Product"].dropna().unique()) if not f_tab1_seg.empty else []
+    selected_prods_1 = st.multiselect("Lọc sản phẩm", tab1_prods, default=tab1_prods, key="prod_tab1")
+    
+    f_tab1 = f_tab1_seg[f_tab1_seg["Product"].isin(selected_prods_1)]
     render_dashboard(f_tab1, "tab1")
 
 with tab2:
     tab2_segments = ["Startups", "SME", "Enterprise"]
     selected_segments_2 = st.multiselect("Lọc phân khúc (Doanh nghiệp)", tab2_segments, default=tab2_segments, key="seg_tab2")
-    f_tab2 = f_base[f_base["Segment"].isin(selected_segments_2)]
+    f_tab2_seg = f_base[f_base["Segment"].isin(selected_segments_2)]
+    
+    tab2_prods = sorted(f_tab2_seg["Product"].dropna().unique()) if not f_tab2_seg.empty else []
+    selected_prods_2 = st.multiselect("Lọc sản phẩm", tab2_prods, default=tab2_prods, key="prod_tab2")
+    
+    f_tab2 = f_tab2_seg[f_tab2_seg["Product"].isin(selected_prods_2)]
     render_dashboard(f_tab2, "tab2")
