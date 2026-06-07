@@ -300,8 +300,39 @@ def render_dashboard(f, tab_id):
                          .background_gradient(subset=["Khách hàng Rời bỏ"], cmap="Reds", text_color_threshold=0.5)
                          .format("{:,.0f}", subset=numeric_cols))
                          
-            # We use st.table here because st.dataframe does not natively support vertical cell merging (rowspan) for MultiIndex
-            st.table(styled_df)
+            # We use raw HTML here because Streamlit's native elements sometimes drop rowspan
+            html_table = styled_df.to_html()
+            
+            css = """
+            <style>
+            .custom-table table {
+                width: 100%;
+                border-collapse: collapse;
+                font-family: sans-serif;
+                color: #595959;
+                font-size: 14px;
+            }
+            .custom-table th, .custom-table td {
+                border: 1px solid #e0e0e0;
+                padding: 8px;
+                text-align: right;
+            }
+            .custom-table thead th {
+                background-color: #f5f5f5;
+                font-weight: bold;
+                text-align: center;
+                position: sticky;
+                top: 0;
+                z-index: 1;
+            }
+            .custom-table tbody th {
+                text-align: left; 
+                background-color: #ffffff;
+            }
+            </style>
+            """
+            
+            st.markdown(css + f'<div class="custom-table" style="height: 850px; overflow-y: auto;">{html_table}</div>', unsafe_allow_html=True)
 
 # Create Tabs
 tab1, tab2 = st.tabs(["Khách hàng cá nhân (Phổ thông, VIP, VVIP)", "Khách hàng doanh nghiệp (Startup, SME, Enterprise)"])
