@@ -228,7 +228,9 @@ def render_dashboard(f, tab_id):
             name="Tăng", 
             marker_color=COLOR_GAIN,
             text=[f"{v:,.0f}" for v in totals_by_reg["Gained"]],
-            textposition="inside"
+            textposition="outside",
+            textangle=0,
+            textfont=dict(size=11)
         ))
         fig_inset.add_trace(go.Bar(
             x=totals_by_reg["Region"], 
@@ -236,16 +238,19 @@ def render_dashboard(f, tab_id):
             name="Giảm", 
             marker_color=COLOR_LOSS,
             text=[f"{v:,.0f}" for v in totals_by_reg["Lost"]],
-            textposition="inside"
+            textposition="outside",
+            textangle=0,
+            textfont=dict(size=11)
         ))
         fig_inset.add_trace(go.Scatter(
             x=totals_by_reg["Region"], 
             y=totals_by_reg["Net"], 
             mode="markers+text", 
-            marker=dict(size=16, color=COLOR_NET), 
+            marker=dict(size=14, color=COLOR_NET), 
             name="Thực tăng",
             text=[f"{v:,.0f}" for v in totals_by_reg["Net"]],
-            textposition="middle right"
+            textposition="top center",
+            textfont=dict(size=12, color=COLOR_NET)
         ))
         fig_inset.update_layout(
             barmode="group", 
@@ -253,13 +258,13 @@ def render_dashboard(f, tab_id):
             plot_bgcolor="rgba(0,0,0,0)",
             height=350,
             margin=dict(l=0, r=0, t=30, b=0),
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+            legend=dict(orientation="h", yanchor="bottom", y=1.05, xanchor="center", x=0.5),
             xaxis=dict(showgrid=False),
             yaxis=dict(showgrid=False, visible=False)
         )
         
         # Place inset alongside line chart
-        col_inset, col_line = st.columns([1, 1.8])
+        col_inset, col_line = st.columns([1.3, 1.5])
         with col_inset:
             st.plotly_chart(fig_inset, use_container_width=True, key=f"fig_inset_{tab_id}")
         with col_line:
