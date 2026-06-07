@@ -290,9 +290,7 @@ def render_dashboard(f, tab_id):
                 "Running_Total": "Tổng tích lũy"
             }, inplace=True)
             
-            # Convert 'Lost' to negative for accurate heatmap representation
-            pivot_styled = pivot.copy()
-            pivot_styled["Khách hàng Rời bỏ"] = -pivot_styled["Khách hàng Rời bỏ"]
+            pivot.set_index(["Khu vực", "Tháng"], inplace=True)
             
             numeric_cols = ["Khách hàng Mới", "Khách hàng Rời bỏ", "Thực tăng", "Tổng tích lũy"]
             
@@ -302,7 +300,7 @@ def render_dashboard(f, tab_id):
                          .background_gradient(subset=["Khách hàng Rời bỏ"], cmap="Reds", text_color_threshold=0.5)
                          .format("{:,.0f}", subset=numeric_cols))
                          
-            st.dataframe(styled_df, use_container_width=True, hide_index=True, height=850)
+            st.dataframe(styled_df, use_container_width=True, height=850)
 
 # Create Tabs
 tab1, tab2 = st.tabs(["Khách hàng cá nhân (Phổ thông, VIP, VVIP)", "Khách hàng doanh nghiệp (Startup, SME, Enterprise)"])
