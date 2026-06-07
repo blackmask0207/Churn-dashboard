@@ -254,11 +254,20 @@ def render_dashboard(f, tab_id):
                 )
         
         # Inset-like side chart for totals by region
-        totals_by_reg = f.groupby("Region", as_index=False).agg(
-            Gained=("New_Customers", "sum"),
-            Lost=("Lost_Customers", "sum"),
-            Net=("Net_Customers", "sum")
-        )
+        if selected_month_str:
+            totals_by_reg = f[f["Month"].dt.strftime("%m/%Y") == selected_month_str].groupby("Region", as_index=False).agg(
+                Gained=("New_Customers", "sum"),
+                Lost=("Lost_Customers", "sum"),
+                Net=("Net_Customers", "sum")
+            )
+            st.markdown(f"**Chi tiết Khu vực - Tháng {selected_month_str}**")
+        else:
+            totals_by_reg = f.groupby("Region", as_index=False).agg(
+                Gained=("New_Customers", "sum"),
+                Lost=("Lost_Customers", "sum"),
+                Net=("Net_Customers", "sum")
+            )
+            st.markdown("**Chi tiết Khu vực - Toàn bộ thời gian**")
         
         fig_inset = go.Figure()
         fig_inset.add_trace(go.Bar(
@@ -302,20 +311,18 @@ def render_dashboard(f, tab_id):
             yaxis=dict(showgrid=False, visible=False)
         )
         
-        # Place inset alongside line chart
-        col_inset, col_line = st.columns([1.3, 1.5])
-        with col_inset:
-            st.plotly_chart(fig_inset, use_container_width=True, key=f"fig_inset_{tab_id}")
-        with col_line:
-            fig2.update_layout(
-                paper_bgcolor="rgba(0,0,0,0)", 
-                plot_bgcolor="rgba(0,0,0,0)",
-                xaxis_tickformat="%m/%Y", 
-                height=350, 
-                margin=dict(l=40, r=80, t=30, b=0),
-                showlegend=False
-            )
-            st.plotly_chart(fig2, use_container_width=True, key=f"fig2_{tab_id}")
+        st.plotly_chart(fig_inset, use_container_width=True, key=f"fig_inset_{tab_id}")
+        
+        st.markdown("**Xu hướng Khách hàng thực tăng theo Khu vực**")
+        fig2.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)", 
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis_tickformat="%m/%Y", 
+            height=350, 
+            margin=dict(l=40, r=80, t=30, b=0),
+            showlegend=False
+        )
+        st.plotly_chart(fig2, use_container_width=True, key=f"fig2_{tab_id}")
             
     with right_col:
         st.subheader("Chi tiết")
