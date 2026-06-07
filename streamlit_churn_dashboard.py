@@ -255,7 +255,7 @@ def render_dashboard(f, tab_id):
                 mode="markers",
                 marker=dict(color=COLOR_MARKER, size=8),
                 name="Khách rời bỏ > Khách mới",
-                showlegend=True,
+                showlegend=False,
                 hoverinfo="skip"
             ))
         
@@ -353,15 +353,7 @@ def render_dashboard(f, tab_id):
             xaxis_tickformat="%m/%Y", 
             height=350, 
             margin=dict(l=40, r=80, t=30, b=0),
-            showlegend=True,
-            legend=dict(
-                title="",
-                orientation="h",
-                yanchor="bottom",
-                y=0.05,
-                xanchor="right",
-                x=1
-            )
+            showlegend=False
         )
         st.plotly_chart(fig2, use_container_width=True, key=f"fig2_{tab_id}")
             
