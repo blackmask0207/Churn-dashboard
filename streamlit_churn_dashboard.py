@@ -300,7 +300,8 @@ def render_dashboard(f, tab_id):
                          .background_gradient(subset=["Khách hàng Rời bỏ"], cmap="Reds", text_color_threshold=0.5)
                          .format("{:,.0f}", subset=numeric_cols))
                          
-            st.dataframe(styled_df, use_container_width=True, height=850)
+            # We use st.table here because st.dataframe does not natively support vertical cell merging (rowspan) for MultiIndex
+            st.table(styled_df)
 
 # Create Tabs
 tab1, tab2 = st.tabs(["Khách hàng cá nhân (Phổ thông, VIP, VVIP)", "Khách hàng doanh nghiệp (Startup, SME, Enterprise)"])
