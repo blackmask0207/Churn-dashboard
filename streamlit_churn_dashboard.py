@@ -7,7 +7,7 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Dashboard Quản trị Khách hàng Rời bỏ", layout="wide")
 
-st.title("Phân tích Khách hàng Rời bỏ")
+st.title("Phân tích khách hàng rời bỏ")
 
 # Color Palette exactly matching the book
 COLOR_GAIN = "#C0C0C0"  # Grey
@@ -137,19 +137,19 @@ def render_dashboard(f, tab_id):
             net_rev_churn_delta = net_rev_churn - p_net_rev_churn
             adj_churn_delta = adj_churn - p_adj_churn
             
-        st.subheader(f"Chỉ số Hiệu quả Chính (Tháng gần nhất: {curr['Month'].strftime('%m/%Y')})")
+        st.subheader(f"Chỉ số hiệu quả chính (Tháng gần nhất: {curr['Month'].strftime('%m/%Y')})")
         kpi1, kpi2, kpi3, kpi4 = st.columns(4)
-        kpi1.metric("Tỷ lệ KH Rời bỏ", f"{cust_churn:.2f}%", f"{cust_churn_delta:.2f}%" if cust_churn_delta is not None else None, delta_color="inverse")
-        kpi2.metric("Tỷ lệ DT Rời bỏ", f"{rev_churn:.2f}%", f"{rev_churn_delta:.2f}%" if rev_churn_delta is not None else None, delta_color="inverse")
-        kpi3.metric("Tỷ lệ DT Rời bỏ Ròng", f"{net_rev_churn:.2f}%", f"{net_rev_churn_delta:.2f}%" if net_rev_churn_delta is not None else None, delta_color="inverse")
-        kpi4.metric("Tỷ lệ Rời bỏ Điều chỉnh", f"{adj_churn:.2f}%", f"{adj_churn_delta:.2f}%" if adj_churn_delta is not None else None, delta_color="inverse")
+        kpi1.metric("Tỷ lệ khách hàng rời bỏ", f"{cust_churn:.2f}%", f"{cust_churn_delta:.2f}%" if cust_churn_delta is not None else None, delta_color="inverse")
+        kpi2.metric("Tỷ lệ doanh thu rời bỏ", f"{rev_churn:.2f}%", f"{rev_churn_delta:.2f}%" if rev_churn_delta is not None else None, delta_color="inverse")
+        kpi3.metric("Tỷ lệ doanh thu rời bỏ ròng", f"{net_rev_churn:.2f}%", f"{net_rev_churn_delta:.2f}%" if net_rev_churn_delta is not None else None, delta_color="inverse")
+        kpi4.metric("Tỷ lệ rời bỏ điều chỉnh", f"{adj_churn:.2f}%", f"{adj_churn_delta:.2f}%" if adj_churn_delta is not None else None, delta_color="inverse")
         st.markdown("---")
 
     # Layout
     left_col, right_col = st.columns([1.3, 1])
 
     with left_col:
-        st.subheader("Hoạt động của Khách hàng - Tổng quan")
+        st.subheader("Hoạt động của khách hàng - tổng quan")
         
         # Chart 1: Subscriber Activity All
         monthly = f.groupby("Month", as_index=False).agg(
@@ -210,7 +210,7 @@ def render_dashboard(f, tab_id):
                 tickformat="%m/%Y",
                 showgrid=False
             ),
-            yaxis=dict(showgrid=True, title="Số lượng Khách hàng"),
+            yaxis=dict(showgrid=True, title="Số lượng khách hàng"),
             legend=dict(
                 orientation="v",
                 yanchor="bottom",
@@ -224,7 +224,7 @@ def render_dashboard(f, tab_id):
         st.plotly_chart(fig1, use_container_width=True, key=fig1_key, on_select="rerun", selection_mode="points")
         
         
-        st.subheader("Biến động Khách hàng thực tế theo Khu vực")
+        st.subheader("Biến động khách hàng thực tế theo khu vực")
         # Chart 2: Net subscriber activity by division
         reg_monthly = f.groupby(["Region", "Month"], as_index=False).agg(
             Net_Customers=("Net_Customers", "sum"),
@@ -279,14 +279,14 @@ def render_dashboard(f, tab_id):
                 Lost=("Lost_Customers", "sum"),
                 Net=("Net_Customers", "sum")
             )
-            st.markdown(f"**Chi tiết Khu vực - Tháng {selected_month_str}**")
+            st.markdown(f"**Chi tiết khu vực - tháng {selected_month_str}**")
         else:
             totals_by_reg = f.groupby("Region", as_index=False).agg(
                 Gained=("New_Customers", "sum"),
                 Lost=("Lost_Customers", "sum"),
                 Net=("Net_Customers", "sum")
             )
-            st.markdown("**Chi tiết Khu vực - Toàn bộ thời gian**")
+            st.markdown("**Chi tiết khu vực - toàn bộ thời gian**")
         
         fig_inset = go.Figure()
         fig_inset.add_trace(go.Bar(
@@ -332,7 +332,7 @@ def render_dashboard(f, tab_id):
         
         st.plotly_chart(fig_inset, use_container_width=True, key=f"fig_inset_{tab_id}")
         
-        st.markdown("**Xu hướng Khách hàng thực tăng theo Khu vực**")
+        st.markdown("**Xu hướng khách hàng thực tăng theo khu vực**")
         fig2.update_layout(
             paper_bgcolor="rgba(0,0,0,0)", 
             plot_bgcolor="rgba(0,0,0,0)",
