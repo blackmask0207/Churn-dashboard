@@ -238,12 +238,26 @@ def render_dashboard(f, tab_id):
         # We will do a line chart for running total by region
         fig2 = px.line(
             reg_monthly, x="Month_Str", y="Running_Total", color="Region", 
-            markers=True,
             color_discrete_sequence=[COLOR_NET], # All lines same blue color like in the book
             labels={"Running_Total": "Khách hàng thực tăng", "Month_Str": ""}
         )
-        # Update markers to orange like in the book
-        fig2.update_traces(marker=dict(color=COLOR_MARKER, size=6))
+        
+        # Hide legend for the line traces (since we label at the end of the line)
+        for trace in fig2.data:
+            trace.showlegend = False
+            
+        # Add orange markers only where Losses > Gains (Net_Customers < 0)
+        loss_pts = reg_monthly[reg_monthly["Net_Customers"] < 0]
+        if not loss_pts.empty:
+            fig2.add_trace(go.Scatter(
+                x=loss_pts["Month_Str"],
+                y=loss_pts["Running_Total"],
+                mode="markers",
+                marker=dict(color=COLOR_MARKER, size=8),
+                name="Khách rời bỏ > Khách mới",
+                showlegend=True,
+                hoverinfo="skip"
+            ))
         
         if selected_month_str:
             fig2.update_traces(opacity=0.4)
@@ -339,7 +353,15 @@ def render_dashboard(f, tab_id):
             xaxis_tickformat="%m/%Y", 
             height=350, 
             margin=dict(l=40, r=80, t=30, b=0),
-            showlegend=False
+            showlegend=True,
+            legend=dict(
+                title="",
+                orientation="h",
+                yanchor="bottom",
+                y=0.05,
+                xanchor="right",
+                x=1
+            )
         )
         st.plotly_chart(fig2, use_container_width=True, key=f"fig2_{tab_id}")
             
