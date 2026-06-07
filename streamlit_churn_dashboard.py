@@ -387,6 +387,23 @@ def render_dashboard(f, tab_id):
             # We use components.html to guarantee that Streamlit does not strip the Pandas Styler CSS
             html_table = styled_df.to_html()
             
+            try:
+                tbody_part = html_table.split('</thead>')[1]
+                custom_thead = """
+  <thead>
+    <tr>
+      <th class="index_name level0" >Khu vực</th>
+      <th class="index_name level1" >Tháng</th>
+      <th class="col_heading level0 col0" >Khách hàng Mới</th>
+      <th class="col_heading level0 col1" >Khách hàng Rời bỏ</th>
+      <th class="col_heading level0 col2" >Thực tăng</th>
+      <th class="col_heading level0 col3" >Tổng tích lũy</th>
+    </tr>
+  </thead>"""
+                html_table = html_table.split('<thead>')[0] + custom_thead + tbody_part
+            except Exception:
+                pass
+            
             css = """
             <style>
             table {
@@ -407,7 +424,8 @@ def render_dashboard(f, tab_id):
                 text-align: center;
                 position: sticky;
                 top: 0;
-                z-index: 1;
+                z-index: 2;
+                box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.4);
             }
             tbody th {
                 text-align: left; 
