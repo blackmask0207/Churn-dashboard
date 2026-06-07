@@ -342,7 +342,7 @@ def render_dashboard(f, tab_id):
             def highlight_row(row):
                 # row.name is a tuple: (Khu vực, Tháng)
                 if selected_month_str and row.name[1] == selected_month_str:
-                    return ['background-color: #FFF2CC; font-weight: bold;'] * len(row)
+                    return ['background-color: #FFF2CC; color: #000000; font-weight: bold;'] * len(row)
                 return [''] * len(row)
                 
             def highlight_idx(s):
