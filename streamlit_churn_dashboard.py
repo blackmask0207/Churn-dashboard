@@ -15,6 +15,14 @@ COLOR_LOSS = "#F19C99"  # Salmon/Red
 COLOR_NET = "#3A7596"   # Muted Blue
 COLOR_MARKER = "#F39C12" # Orange for line markers
 
+COLOR_GAIN_SEL = "#808080" # Dark Grey
+COLOR_LOSS_SEL = "#C0392B" # Dark Red
+COLOR_NET_SEL = "#F39C12"  # Orange
+
+COLOR_GAIN_DIM = "#E0E0E0"
+COLOR_LOSS_DIM = "#FADBD8"
+COLOR_NET_DIM = "#D6EAF8"
+
 @st.cache_data(show_spinner="Đang tải dữ liệu và tính toán chỉ số...")
 def load_data():
     data_dir = "star_schema_data"
@@ -50,6 +58,15 @@ def render_dashboard(f, tab_id):
     if len(f) == 0:
         st.warning(f"Không tìm thấy dữ liệu cho bộ lọc đã chọn.")
         return
+
+    # Check for selected month from chart clicks
+    selected_month_str = None
+    fig1_key = f"fig1_{tab_id}"
+    if fig1_key in st.session_state:
+        sel = st.session_state[fig1_key].get("selection", {})
+        pts = sel.get("points", [])
+        if pts:
+            selected_month_str = pts[0]["x"]
 
     # Aggregate by month for KPIs
     monthly_kpi = f.groupby("Month", as_index=False).agg(
@@ -122,37 +139,45 @@ def render_dashboard(f, tab_id):
             Net_Customers=("Net_Customers", "sum")
         ).sort_values("Month")
         
+        monthly["Month_Str"] = monthly["Month"].dt.strftime("%m/%Y")
+        
         # Calculate Running Total starting from the first month
         monthly["Running_Total"] = monthly["Net_Customers"].cumsum()
         monthly["Prev_Running_Total"] = monthly["Running_Total"].shift(1).fillna(0)
+        
+        # Determine colors based on selection
+        gain_colors = [COLOR_GAIN_SEL if m == selected_month_str else (COLOR_GAIN_DIM if selected_month_str else COLOR_GAIN) for m in monthly["Month_Str"]]
+        loss_colors = [COLOR_LOSS_SEL if m == selected_month_str else (COLOR_LOSS_DIM if selected_month_str else COLOR_LOSS) for m in monthly["Month_Str"]]
+        net_colors = [COLOR_NET_SEL if m == selected_month_str else (COLOR_NET_DIM if selected_month_str else COLOR_NET) for m in monthly["Month_Str"]]
+        net_sizes = [12 if m == selected_month_str else (6 if selected_month_str else 8) for m in monthly["Month_Str"]]
         
         fig1 = go.Figure()
         
         # Gain Bar
         fig1.add_trace(go.Bar(
-            x=monthly["Month"],
+            x=monthly["Month_Str"],
             y=monthly["New_Customers"],
             base=monthly["Prev_Running_Total"],
-            marker_color=COLOR_GAIN, 
+            marker_color=gain_colors, 
             name="Tăng"
         ))
         
         # Loss Bar
         fig1.add_trace(go.Bar(
-            x=monthly["Month"],
+            x=monthly["Month_Str"],
             y=-monthly["Lost_Customers"],
             base=monthly["Prev_Running_Total"] + monthly["New_Customers"],
-            marker_color=COLOR_LOSS, 
+            marker_color=loss_colors, 
             name="Giảm"
         ))
         
         # Net Line
         fig1.add_trace(go.Scatter(
-            x=monthly["Month"],
+            x=monthly["Month_Str"],
             y=monthly["Running_Total"],
             mode="lines+markers+text",
-            line=dict(color=COLOR_NET, width=3),
-            marker=dict(size=8, color=COLOR_NET),
+            line=dict(color=COLOR_NET if not selected_month_str else COLOR_NET_DIM, width=3),
+            marker=dict(size=net_sizes, color=net_colors),
             name="Thực tăng",
             text=[f"{val:,.0f}" for val in monthly["Running_Total"]],
             textposition="bottom right"
@@ -177,7 +202,7 @@ def render_dashboard(f, tab_id):
             height=450,
             margin=dict(l=40, r=40, t=20, b=40)
         )
-        st.plotly_chart(fig1, use_container_width=True, key=f"fig1_{tab_id}")
+        st.plotly_chart(fig1, use_container_width=True, key=fig1_key, on_select="rerun", selection_mode="points")
         
         
         st.subheader("Biến động Khách hàng thực tế theo Khu vực")
@@ -189,16 +214,30 @@ def render_dashboard(f, tab_id):
         ).sort_values(["Region", "Month"])
         
         reg_monthly["Running_Total"] = reg_monthly.groupby("Region")["Net_Customers"].cumsum()
+        reg_monthly["Month_Str"] = reg_monthly["Month"].dt.strftime("%m/%Y")
         
         # We will do a line chart for running total by region
         fig2 = px.line(
-            reg_monthly, x="Month", y="Running_Total", color="Region", 
+            reg_monthly, x="Month_Str", y="Running_Total", color="Region", 
             markers=True,
             color_discrete_sequence=[COLOR_NET], # All lines same blue color like in the book
-            labels={"Running_Total": "Khách hàng thực tăng", "Month": ""}
+            labels={"Running_Total": "Khách hàng thực tăng", "Month_Str": ""}
         )
         # Update markers to orange like in the book
         fig2.update_traces(marker=dict(color=COLOR_MARKER, size=6))
+        
+        if selected_month_str:
+            fig2.update_traces(opacity=0.4)
+            sel_data = reg_monthly[reg_monthly["Month_Str"] == selected_month_str]
+            if not sel_data.empty:
+                fig2.add_trace(go.Scatter(
+                    x=sel_data["Month_Str"],
+                    y=sel_data["Running_Total"],
+                    mode="markers",
+                    marker=dict(color=COLOR_MARKER, size=12, line=dict(color='white', width=2)),
+                    showlegend=False,
+                    hoverinfo="skip"
+                ))
         
         # Add text to the last point of each line
         for i, region in enumerate(reg_monthly["Region"].unique()):
@@ -206,7 +245,7 @@ def render_dashboard(f, tab_id):
             if not region_data.empty:
                 last_point = region_data.iloc[-1]
                 fig2.add_annotation(
-                    x=last_point["Month"],
+                    x=last_point["Month_Str"],
                     y=last_point["Running_Total"],
                     text=f"<b>{region}</b><br>{last_point['Running_Total']:,.0f}",
                     showarrow=False,
@@ -300,11 +339,24 @@ def render_dashboard(f, tab_id):
             
             numeric_cols = ["Khách hàng Mới", "Khách hàng Rời bỏ", "Thực tăng", "Tổng tích lũy"]
             
+            def highlight_row(row):
+                # row.name is a tuple: (Khu vực, Tháng)
+                if selected_month_str and row.name[1] == selected_month_str:
+                    return ['background-color: #FFF2CC; font-weight: bold;'] * len(row)
+                return [''] * len(row)
+                
+            def highlight_idx(s):
+                if selected_month_str:
+                    return ['background-color: #F1C40F; color: black;' if v == selected_month_str else '' for v in s]
+                return [''] * len(s)
+            
             # Apply styling matching the book: Grey for Gain, Red for Loss, no background for Net and Total
             styled_df = (pivot.style
                          .background_gradient(subset=["Khách hàng Mới"], cmap="Greys", text_color_threshold=0.5)
                          .background_gradient(subset=["Khách hàng Rời bỏ"], cmap="Reds", text_color_threshold=0.5)
-                         .format("{:,.0f}", subset=numeric_cols))
+                         .format("{:,.0f}", subset=numeric_cols)
+                         .apply(highlight_row, axis=1)
+                         .apply_index(highlight_idx, axis=0, level="Tháng"))
                          
             # We use components.html to guarantee that Streamlit does not strip the Pandas Styler CSS
             html_table = styled_df.to_html()
