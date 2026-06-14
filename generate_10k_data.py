@@ -6,7 +6,7 @@ import random
 def generate_data(num_months=12):
     regions = ['Hà Nội', 'TP.HCM', 'Đà Nẵng', 'Hải Phòng']
     segments = ['Gen Z', 'Millennials', 'Gen X', 'Boomers', 'Mass', 'Affluent', 'VIP', 'VVIP', 'SME', 'Corporate', 'Student', 'Freelancer', 'Startups', 'Enterprise', 'Government']
-    products = ['Investment', 'Personal Loan', 'Home Loan', 'Saving', 'Credit Card', 'Debit Card', 'Life Insurance', 'Health Insurance', 'Wealth Management', 'Auto Loan', 'Crypto', 'Forex', 'Mutual Funds', 'Bonds']
+    churn_reasons = ['Phí dịch vụ cao', 'Lãi suất không cạnh tranh', 'Chăm sóc khách hàng kém', 'Ứng dụng lỗi/chậm', 'Thủ tục rườm rà', 'Đối thủ khuyến mãi tốt', 'Không còn nhu cầu', 'Khác']
     
     start_date = datetime(2025, 1, 1)
     months = [start_date + pd.DateOffset(months=i) for i in range(num_months)]
@@ -33,8 +33,9 @@ def generate_data(num_months=12):
     for region in regions:
         min_cust, max_cust = region_ranges[region]
         for segment in segments:
-            for product in products:
+            for reason in churn_reasons:
                 # Initialize beginning customers for this combination based on region scale
+
                 base_customers = random.randint(min_cust, max_cust)
                 if segment in segment_multipliers:
                     base_customers = max(5, int(base_customers * segment_multipliers[segment]))
@@ -77,7 +78,7 @@ def generate_data(num_months=12):
                         'Month': month.strftime('%Y-%m-%d'),
                         'Region': region,
                         'Segment': segment,
-                        'Product': product,
+                        'Churn_Reason': reason,
                         'Beginning_Customers': base_customers,
                         'New_Customers': new_customers,
                         'Lost_Customers': lost_customers,

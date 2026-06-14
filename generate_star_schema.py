@@ -20,9 +20,9 @@ def create_star_schema(input_csv, output_dir):
     dim_segment = df[['Segment']].drop_duplicates().reset_index(drop=True)
     dim_segment.insert(0, 'segment_id', dim_segment.index + 1)
     
-    # 4. Dim Product
-    dim_product = df[['Product']].drop_duplicates().reset_index(drop=True)
-    dim_product.insert(0, 'product_id', dim_product.index + 1)
+    # 4. Dim Churn Reason
+    dim_churn_reason = df[['Churn_Reason']].drop_duplicates().reset_index(drop=True)
+    dim_churn_reason.insert(0, 'reason_id', dim_churn_reason.index + 1)
 
     # Merge to create Fact Table
     fact_df = df.copy()
@@ -31,11 +31,11 @@ def create_star_schema(input_csv, output_dir):
     fact_df = fact_df.merge(dim_time, on='Month', how='left')
     fact_df = fact_df.merge(dim_region, on='Region', how='left')
     fact_df = fact_df.merge(dim_segment, on='Segment', how='left')
-    fact_df = fact_df.merge(dim_product, on='Product', how='left')
+    fact_df = fact_df.merge(dim_churn_reason, on='Churn_Reason', how='left')
     
     # Select Fact columns
     fact_columns = [
-        'time_id', 'region_id', 'segment_id', 'product_id',
+        'time_id', 'region_id', 'segment_id', 'reason_id',
         'Beginning_Customers', 'New_Customers', 'Lost_Customers', 'Net_Customers', 
         'Running_Total', 'Beginning_MRR', 'Expansion_MRR', 'Lost_MRR', 'Net_MRR', 'Running_Total_MRR',
         'Churn_Rate', 'Retention_Rate', 'Missing_Records', 
@@ -49,14 +49,14 @@ def create_star_schema(input_csv, output_dir):
     dim_time.to_csv(os.path.join(output_dir, 'dim_time.csv'), index=False)
     dim_region.to_csv(os.path.join(output_dir, 'dim_region.csv'), index=False)
     dim_segment.to_csv(os.path.join(output_dir, 'dim_segment.csv'), index=False)
-    dim_product.to_csv(os.path.join(output_dir, 'dim_product.csv'), index=False)
+    dim_churn_reason.to_csv(os.path.join(output_dir, 'dim_churn_reason.csv'), index=False)
     fact_churn.to_csv(os.path.join(output_dir, 'fact_churn.csv'), index=False)
     
     print(f"Star schema successfully created in '{output_dir}' directory.")
     print(f"Dim Time: {len(dim_time)} rows")
     print(f"Dim Region: {len(dim_region)} rows")
     print(f"Dim Segment: {len(dim_segment)} rows")
-    print(f"Dim Product: {len(dim_product)} rows")
+    print(f"Dim Churn Reason: {len(dim_churn_reason)} rows")
     print(f"Fact Churn: {len(fact_churn)} rows")
 
 if __name__ == "__main__":

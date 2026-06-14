@@ -35,34 +35,20 @@ def load_data():
     dim_time = pd.read_csv(os.path.join(data_dir, "dim_time.csv"))
     dim_region = pd.read_csv(os.path.join(data_dir, "dim_region.csv"))
     dim_segment = pd.read_csv(os.path.join(data_dir, "dim_segment.csv"))
-    dim_product = pd.read_csv(os.path.join(data_dir, "dim_product.csv"))
+    dim_segment = pd.read_csv(os.path.join(data_dir, "dim_segment.csv"))
+    dim_churn_reason = pd.read_csv(os.path.join(data_dir, "dim_churn_reason.csv"))
     
     df = (fact_df
           .merge(dim_time, on="time_id", how="left")
           .merge(dim_region, on="region_id", how="left")
           .merge(dim_segment, on="segment_id", how="left")
-          .merge(dim_product, on="product_id", how="left"))
+          .merge(dim_churn_reason, on="reason_id", how="left"))
     
     df["Month"] = pd.to_datetime(df["Month"])
     df["Last_Updated_Date"] = pd.to_datetime(df["Last_Updated_Date"])
     
-    product_translation = {
-        'Investment': 'Đầu tư', 
-        'Personal Loan': 'Vay tiêu dùng', 
-        'Home Loan': 'Vay mua nhà', 
-        'Saving': 'Gửi tiết kiệm', 
-        'Credit Card': 'Thẻ tín dụng', 
-        'Debit Card': 'Thẻ ghi nợ', 
-        'Life Insurance': 'Bảo hiểm nhân thọ', 
-        'Health Insurance': 'Bảo hiểm sức khỏe', 
-        'Wealth Management': 'Quản lý gia sản', 
-        'Auto Loan': 'Vay mua ô tô', 
-        'Crypto': 'Tiền điện tử', 
-        'Forex': 'Ngoại hối', 
-        'Mutual Funds': 'Quỹ tương hỗ', 
-        'Bonds': 'Trái phiếu'
-    }
-    df["Product"] = df["Product"].map(product_translation).fillna(df["Product"])
+    df["Month"] = pd.to_datetime(df["Month"])
+    df["Last_Updated_Date"] = pd.to_datetime(df["Last_Updated_Date"])
     
     return df
 
@@ -266,7 +252,7 @@ def render_dashboard(f, tab_id):
         if has_churn_spike:
             fig1.add_annotation(
                 x=last_month_str, 
-                y=last_running_total,
+                y=monthly["Running_Total"].iloc[-1],
                 text=f"⚠️ Rời bỏ tăng {pct_inc:.0f}%",
                 showarrow=True,
                 arrowhead=2,
@@ -277,7 +263,7 @@ def render_dashboard(f, tab_id):
         if has_negative_growth:
             fig1.add_annotation(
                 x=last_month_str, 
-                y=last_running_total,
+                y=monthly["Running_Total"].iloc[-1],
                 text="🚨 Tăng trưởng âm",
                 showarrow=True,
                 arrowhead=2,
@@ -679,10 +665,10 @@ with tab1:
     selected_segments_1 = st.multiselect("Lọc phân khúc (Cá nhân)", tab1_segments, default=tab1_segments, key="seg_tab1")
     f_tab1_seg = f_base[f_base["Segment"].isin(selected_segments_1)]
     
-    tab1_prods = sorted(f_tab1_seg["Product"].dropna().unique()) if not f_tab1_seg.empty else []
-    selected_prods_1 = st.multiselect("Lọc sản phẩm", tab1_prods, default=tab1_prods, key="prod_tab1")
+    tab1_reasons = sorted(f_tab1_seg["Churn_Reason"].dropna().unique()) if not f_tab1_seg.empty else []
+    selected_reasons_1 = st.multiselect("Lọc nguyên nhân rời bỏ", tab1_reasons, default=tab1_reasons, key="reason_tab1")
     
-    f_tab1 = f_tab1_seg[f_tab1_seg["Product"].isin(selected_prods_1)]
+    f_tab1 = f_tab1_seg[f_tab1_seg["Churn_Reason"].isin(selected_reasons_1)]
     render_dashboard(f_tab1, "tab1")
 
 with tab2:
@@ -690,8 +676,8 @@ with tab2:
     selected_segments_2 = st.multiselect("Lọc phân khúc (Doanh nghiệp)", tab2_segments, default=tab2_segments, key="seg_tab2")
     f_tab2_seg = f_base[f_base["Segment"].isin(selected_segments_2)]
     
-    tab2_prods = sorted(f_tab2_seg["Product"].dropna().unique()) if not f_tab2_seg.empty else []
-    selected_prods_2 = st.multiselect("Lọc sản phẩm", tab2_prods, default=tab2_prods, key="prod_tab2")
+    tab2_reasons = sorted(f_tab2_seg["Churn_Reason"].dropna().unique()) if not f_tab2_seg.empty else []
+    selected_reasons_2 = st.multiselect("Lọc nguyên nhân rời bỏ", tab2_reasons, default=tab2_reasons, key="reason_tab2")
     
-    f_tab2 = f_tab2_seg[f_tab2_seg["Product"].isin(selected_prods_2)]
+    f_tab2 = f_tab2_seg[f_tab2_seg["Churn_Reason"].isin(selected_reasons_2)]
     render_dashboard(f_tab2, "tab2")
