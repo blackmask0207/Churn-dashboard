@@ -99,13 +99,18 @@ def render_dashboard(f, tab_id):
         Lost_MRR=("Lost_MRR", "sum")
     ).sort_values("Month")
     
-    # Automated Alerts Engine
-    st.subheader("🔔 Hệ thống Cảnh báo tự động")
-    alerts = []
-    
+    # Detect Alerts for Chart Annotations
+    has_churn_spike = False
+    has_negative_growth = False
+    pct_inc = 0
+    last_month_str = ""
+    last_running_total = 0
+            
     if len(monthly_kpi) > 1:
         curr_m = monthly_kpi.iloc[-1]
         prev_m = monthly_kpi.iloc[-2]
+        last_month_str = curr_m['Month'].strftime("%m/%Y")
+        last_running_total = curr_m['Running_Total']
         
         c_beg = curr_m['Beginning_Customers']
         c_lost = curr_m['Lost_Customers']
@@ -117,23 +122,14 @@ def render_dashboard(f, tab_id):
         
         # 2. Churn Spike
         if p_churn > 0 and c_churn > p_churn * 1.2:
+            has_churn_spike = True
             pct_inc = (c_churn - p_churn) / p_churn * 100
-            alerts.append({"type": "error", "msg": f"**Cảnh báo Đột biến Rời bỏ!** Tỷ lệ rời bỏ tháng gần nhất tăng vọt **{pct_inc:.1f}%** so với tháng trước."})
             
         # 3. Negative Growth
-        c_net = curr_m['New_Customers'] - curr_m['Lost_Customers']
-        if c_net < 0:
-            alerts.append({"type": "error", "msg": f"**Báo động Tăng trưởng Âm!** Khách hàng thực tăng tháng gần nhất là **{c_net:,.0f}**. Số lượng rời bỏ đang vượt quá số mới."})
-            
-    if not alerts:
-        st.success("✅ Hệ thống hoạt động ổn định. Không phát hiện rủi ro bất thường.")
-    else:
-        for alert in alerts:
-            if alert["type"] == "warning":
-                st.warning(alert["msg"])
-            else:
-                st.error(alert["msg"])
-    st.markdown("---")
+        c_net_val = curr_m['New_Customers'] - curr_m['Lost_Customers']
+        if c_net_val < 0:
+            has_negative_growth = True
+
 
     if len(monthly_kpi) > 0:
         curr = monthly_kpi.iloc[-1]
@@ -265,6 +261,30 @@ def render_dashboard(f, tab_id):
         
         # Add abbreviated month names for the inset x-axis
         short_months = [pd.to_datetime(m, format="%m/%Y").strftime("%b")[0] for m in monthly["Month_Str"]]
+
+        # Add alert annotations to fig1 if needed
+        if has_churn_spike:
+            fig1.add_annotation(
+                x=last_month_str, 
+                y=last_running_total,
+                text=f"⚠️ Rời bỏ tăng {pct_inc:.0f}%",
+                showarrow=True,
+                arrowhead=2,
+                ax=0, ay=-40,
+                font=dict(color="red", size=11),
+                bgcolor="white", bordercolor="red", borderwidth=1
+            )
+        if has_negative_growth:
+            fig1.add_annotation(
+                x=last_month_str, 
+                y=last_running_total,
+                text="🚨 Tăng trưởng âm",
+                showarrow=True,
+                arrowhead=2,
+                ax=0, ay=40,
+                font=dict(color="darkred", size=11),
+                bgcolor="white", bordercolor="darkred", borderwidth=1
+            )
 
         fig1.update_layout(
             barmode="group",
