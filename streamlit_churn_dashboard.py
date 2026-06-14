@@ -86,33 +86,34 @@ def render_dashboard(f, tab_id):
     ).sort_values("Month")
     
     # Detect Alerts for Chart Annotations
-    has_churn_spike = False
+    churn_alerts = [] # List of tuples: (month_str, pct_inc)
     has_negative_growth = False
-    pct_inc = 0
     last_month_str = ""
-    last_running_total = 0
             
     if len(monthly_kpi) > 1:
-        curr_m = monthly_kpi.iloc[-1]
-        prev_m = monthly_kpi.iloc[-2]
-        last_month_str = curr_m['Month'].strftime("%m/%Y")
-        last_running_total = curr_m['Running_Total']
-        
-        c_beg = curr_m['Beginning_Customers']
-        c_lost = curr_m['Lost_Customers']
-        p_beg = prev_m['Beginning_Customers']
-        p_lost = prev_m['Lost_Customers']
-        
-        c_churn = (c_lost / c_beg) if c_beg > 0 else 0
-        p_churn = (p_lost / p_beg) if p_beg > 0 else 0
-        
-        # 2. Churn Spike
-        if p_churn > 0 and c_churn > p_churn * 1.2:
-            has_churn_spike = True
-            pct_inc = (c_churn - p_churn) / p_churn * 100
+        # Loop over all months to find churn spikes
+        for i in range(1, len(monthly_kpi)):
+            curr_m = monthly_kpi.iloc[i]
+            prev_m = monthly_kpi.iloc[i-1]
             
-        # 3. Negative Growth
-        c_net_val = curr_m['New_Customers'] - curr_m['Lost_Customers']
+            c_beg = curr_m['Beginning_Customers']
+            c_lost = curr_m['Lost_Customers']
+            p_beg = prev_m['Beginning_Customers']
+            p_lost = prev_m['Lost_Customers']
+            
+            c_churn = (c_lost / c_beg) if c_beg > 0 else 0
+            p_churn = (p_lost / p_beg) if p_beg > 0 else 0
+            
+            # Churn Spike > 10% compared to previous month
+            if p_churn > 0 and c_churn > p_churn * 1.1:
+                pct_inc = (c_churn - p_churn) / p_churn * 100
+                m_str = curr_m['Month'].strftime("%m/%Y")
+                churn_alerts.append((m_str, pct_inc))
+
+        # Check negative growth only for the last month as a critical status
+        curr_m_last = monthly_kpi.iloc[-1]
+        last_month_str = curr_m_last['Month'].strftime("%m/%Y")
+        c_net_val = curr_m_last['New_Customers'] - curr_m_last['Lost_Customers']
         if c_net_val < 0:
             has_negative_growth = True
 
@@ -249,18 +250,22 @@ def render_dashboard(f, tab_id):
         short_months = [pd.to_datetime(m, format="%m/%Y").strftime("%b")[0] for m in monthly["Month_Str"]]
 
         # Add alert annotations to fig1 if needed
-        if has_churn_spike:
-            fig1.add_annotation(
-                x=last_month_str, 
-                y=monthly["Running_Total"].iloc[-1],
-                text=f"⚠️ Rời bỏ tăng {pct_inc:.0f}%",
-                showarrow=True,
-                arrowhead=2,
-                ax=0, ay=-40,
-                font=dict(color="red", size=11),
-                bgcolor="white", bordercolor="red", borderwidth=1
-            )
-        if has_negative_growth:
+        for m_str, pct_inc in churn_alerts:
+            # Check if this month exists in the current filtered monthly data
+            if m_str in monthly["Month_Str"].values:
+                r_total = monthly.loc[monthly['Month_Str'] == m_str, 'Running_Total'].values[0]
+                fig1.add_annotation(
+                    x=m_str, 
+                    y=r_total,
+                    text=f"⚠️ Rời bỏ tăng {pct_inc:.0f}%",
+                    showarrow=True,
+                    arrowhead=2,
+                    ax=0, ay=-40,
+                    font=dict(color="red", size=10),
+                    bgcolor="white", bordercolor="red", borderwidth=1
+                )
+                
+        if has_negative_growth and last_month_str in monthly["Month_Str"].values:
             fig1.add_annotation(
                 x=last_month_str, 
                 y=monthly["Running_Total"].iloc[-1],
