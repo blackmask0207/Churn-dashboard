@@ -6,7 +6,7 @@ import random
 def generate_data(num_months=12):
     regions = ['Hà Nội', 'TP.HCM', 'Đà Nẵng', 'Hải Phòng']
     segments = ['Gen Z', 'Millennials', 'Gen X', 'Boomers', 'Mass', 'Affluent', 'VIP', 'VVIP', 'SME', 'Corporate', 'Student', 'Freelancer', 'Startups', 'Enterprise', 'Government']
-    churn_reasons = ['Phí dịch vụ cao', 'Lãi suất không cạnh tranh', 'Chăm sóc khách hàng kém', 'Ứng dụng lỗi/chậm', 'Thủ tục rườm rà', 'Đối thủ khuyến mãi tốt', 'Không còn nhu cầu', 'Khác']
+    churn_reasons = ['Phí dịch vụ cao', 'Chăm sóc khách hàng kém', 'Ứng dụng lỗi/chậm', 'Thủ tục rườm rà', 'Đối thủ khuyến mãi tốt', 'Không còn nhu cầu', 'Khác']
     
     start_date = datetime(2025, 1, 1)
     months = [start_date + pd.DateOffset(months=i) for i in range(num_months)]
