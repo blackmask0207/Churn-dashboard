@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 import os
@@ -97,6 +98,49 @@ def render_dashboard(f, tab_id):
         Expansion_MRR=("Expansion_MRR", "sum"),
         Lost_MRR=("Lost_MRR", "sum")
     ).sort_values("Month")
+    
+    # Automated Alerts Engine
+    st.subheader("🔔 Hệ thống Cảnh báo tự động")
+    alerts = []
+    
+    # 1. Data Quality Check
+    if 'Data_Quality_Status' in f.columns:
+        dq_issues = f[f['Data_Quality_Status'] == 'Cần kiểm tra']
+        if not dq_issues.empty:
+            num_issues = len(dq_issues)
+            alerts.append({"type": "warning", "msg": f"Phát hiện **{num_issues}** bản ghi có vấn đề chất lượng dữ liệu (thiếu sót/trùng lặp). Vui lòng rà soát lại Data Pipeline."})
+            
+    if len(monthly_kpi) > 1:
+        curr_m = monthly_kpi.iloc[-1]
+        prev_m = monthly_kpi.iloc[-2]
+        
+        c_beg = curr_m['Beginning_Customers']
+        c_lost = curr_m['Lost_Customers']
+        p_beg = prev_m['Beginning_Customers']
+        p_lost = prev_m['Lost_Customers']
+        
+        c_churn = (c_lost / c_beg) if c_beg > 0 else 0
+        p_churn = (p_lost / p_beg) if p_beg > 0 else 0
+        
+        # 2. Churn Spike
+        if p_churn > 0 and c_churn > p_churn * 1.2:
+            pct_inc = (c_churn - p_churn) / p_churn * 100
+            alerts.append({"type": "error", "msg": f"**Cảnh báo Đột biến Rời bỏ!** Tỷ lệ rời bỏ tháng gần nhất tăng vọt **{pct_inc:.1f}%** so với tháng trước."})
+            
+        # 3. Negative Growth
+        c_net = curr_m['New_Customers'] - curr_m['Lost_Customers']
+        if c_net < 0:
+            alerts.append({"type": "error", "msg": f"**Báo động Tăng trưởng Âm!** Khách hàng thực tăng tháng gần nhất là **{c_net:,.0f}**. Số lượng rời bỏ đang vượt quá số mới."})
+            
+    if not alerts:
+        st.success("✅ Hệ thống hoạt động ổn định. Không phát hiện rủi ro bất thường.")
+    else:
+        for alert in alerts:
+            if alert["type"] == "warning":
+                st.warning(alert["msg"])
+            else:
+                st.error(alert["msg"])
+    st.markdown("---")
 
     if len(monthly_kpi) > 0:
         curr = monthly_kpi.iloc[-1]
@@ -548,6 +592,71 @@ def render_dashboard(f, tab_id):
         use_container_width=True,
         height=(len(months_list) + 1) * 35 + 3  # dynamic height based on rows
     )
+    
+    st.markdown("---")
+    st.subheader("Dự báo Khách hàng Rời bỏ (3 Tháng Tới)")
+    
+    forecast_df = monthly_kpi.copy()
+    if len(forecast_df) > 2:
+        y = forecast_df["Lost_Customers"].values
+        x = np.arange(len(y))
+        
+        # Linear fit using np.polyfit
+        coeffs = np.polyfit(x, y, 1)
+        poly_fn = np.poly1d(coeffs)
+        
+        # Predict future 3 months
+        future_x = np.arange(len(y), len(y) + 3)
+        future_y = poly_fn(future_x)
+        future_y = np.maximum(0, future_y) # prevent negative churn predictions
+        
+        last_month = forecast_df["Month"].iloc[-1]
+        future_months = [last_month + pd.DateOffset(months=i) for i in range(1, 4)]
+        
+        fig_fcast = go.Figure()
+        
+        # Historical line
+        fig_fcast.add_trace(go.Scatter(
+            x=forecast_df["Month"],
+            y=y,
+            mode='lines+markers',
+            name='Thực tế',
+            line=dict(color=COLOR_LOSS, width=3),
+            marker=dict(size=8)
+        ))
+        
+        # Forecast line
+        fx_plot = [forecast_df["Month"].iloc[-1]] + future_months
+        fy_plot = [y[-1]] + list(future_y)
+        
+        fig_fcast.add_trace(go.Scatter(
+            x=fx_plot,
+            y=fy_plot,
+            mode='lines+markers+text',
+            name='Dự báo',
+            line=dict(color=COLOR_LOSS, width=3, dash='dash'),
+            marker=dict(size=8, symbol='star'),
+            text=[""] + [f"{int(v)}" for v in future_y],
+            textposition="top center"
+        ))
+        
+        # Add a vertical line to separate historical and forecast
+        fig_fcast.add_vline(x=forecast_df["Month"].iloc[-1], line_width=1, line_dash="dot", line_color="gray")
+        fig_fcast.add_annotation(x=forecast_df["Month"].iloc[-1], y=max(max(y), max(future_y)), text="Hiện tại", showarrow=False, xanchor="right", xshift=-5, font=dict(color="gray"))
+        
+        fig_fcast.update_layout(
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(showgrid=False, title="Thời gian", tickformat="%m/%Y"),
+            yaxis=dict(showgrid=True, title="Lượng khách hàng Rời bỏ"),
+            margin=dict(l=40, r=40, t=20, b=40),
+            height=350,
+            hovermode="x unified",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1)
+        )
+        st.plotly_chart(fig_fcast, use_container_width=True, key=f"fig_fcast_{tab_id}")
+    else:
+        st.info("Không đủ dữ liệu lịch sử để chạy mô hình dự báo.")
 
 # Create Tabs
 tab1, tab2 = st.tabs(["Khách hàng cá nhân (Phổ thông, VIP, VVIP)", "Khách hàng doanh nghiệp (Startup, SME, Enterprise)"])
