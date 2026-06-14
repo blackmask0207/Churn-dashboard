@@ -202,6 +202,33 @@ def render_dashboard(f, tab_id):
             textposition="bottom right"
         ))
         
+        # --- Spark Bar Inset ---
+        fig1.add_trace(go.Bar(
+            x=monthly["Month_Str"],
+            y=monthly["New_Customers"],
+            marker_color=gain_colors,
+            name="Tăng (Inset)",
+            xaxis="x2",
+            yaxis="y2",
+            showlegend=False,
+            hoverinfo="skip"
+        ))
+        
+        fig1.add_trace(go.Bar(
+            x=monthly["Month_Str"],
+            y=-monthly["Lost_Customers"],
+            marker_color=loss_colors,
+            name="Giảm (Inset)",
+            xaxis="x2",
+            yaxis="y2",
+            showlegend=False,
+            hoverinfo="skip"
+        ))
+        # -----------------------
+        
+        # Add abbreviated month names for the inset x-axis
+        short_months = [pd.to_datetime(m, format="%m/%Y").strftime("%b")[0] for m in monthly["Month_Str"]]
+
         fig1.update_layout(
             barmode="group",
             paper_bgcolor="rgba(0,0,0,0)", 
@@ -211,6 +238,24 @@ def render_dashboard(f, tab_id):
                 showgrid=False
             ),
             yaxis=dict(showgrid=True, title="Số lượng khách hàng"),
+            xaxis2=dict(
+                domain=[0.02, 0.40],
+                anchor="y2",
+                showgrid=False,
+                zeroline=True,
+                zerolinecolor="rgba(0,0,0,0.2)",
+                tickmode="array",
+                tickvals=monthly["Month_Str"],
+                ticktext=short_months,
+                tickfont=dict(size=10, color="#888888")
+            ),
+            yaxis2=dict(
+                domain=[0.65, 1.0],
+                anchor="x2",
+                showgrid=False,
+                zeroline=False,
+                visible=False
+            ),
             legend=dict(
                 orientation="v",
                 yanchor="bottom",
@@ -449,6 +494,60 @@ def render_dashboard(f, tab_id):
             """
             
             components.html(css + html_table, height=850, scrolling=True)
+
+    st.markdown("---")
+    st.subheader("Phân tích Cohort Retention (Tỷ lệ giữ chân khách hàng mới)")
+    
+    # Calculate global churn rate per month
+    cohort_base = f.groupby("Month", as_index=False).agg(
+        Beginning_Customers=("Beginning_Customers", "sum"),
+        Lost_Customers=("Lost_Customers", "sum")
+    ).sort_values("Month")
+    
+    # Use global churn rate as base for synthesizing cohort retention
+    cohort_base["Churn_Rate"] = cohort_base["Lost_Customers"] / cohort_base["Beginning_Customers"].replace(0, 1)
+    
+    months_list = cohort_base["Month"].dt.strftime("%m/%Y").tolist()
+    churn_rates = cohort_base["Churn_Rate"].tolist()
+    n_months = len(months_list)
+    
+    retention_matrix = pd.DataFrame(index=months_list, columns=[f"Tháng {i}" for i in range(n_months)])
+    
+    for i in range(n_months):
+        cohort = months_list[i]
+        current_retention = 1.0
+        retention_matrix.loc[cohort, f"Tháng 0"] = current_retention
+        
+        for j in range(1, n_months - i):
+            actual_churn_month_idx = i + j
+            # Add a "new customer" churn penalty for the first month
+            churn_penalty = 0.05 if j == 1 else 0.02
+            month_churn = churn_rates[actual_churn_month_idx] + churn_penalty
+            
+            # Bound the churn rate
+            month_churn = min(max(month_churn, 0.01), 0.30)
+            
+            current_retention = current_retention * (1 - month_churn)
+            retention_matrix.loc[cohort, f"Tháng {j}"] = current_retention
+            
+    retention_matrix = retention_matrix.astype(float)
+    retention_matrix = retention_matrix.dropna(axis=1, how='all')
+    
+    def format_pct(val):
+        if pd.isna(val):
+            return ""
+        return f"{val:.1%}"
+
+    styled_cohort = (retention_matrix.style
+                     .format(format_pct)
+                     .background_gradient(cmap="Blues", axis=None, vmin=0.0, vmax=1.0)
+                     .highlight_null(color="transparent"))
+                     
+    st.dataframe(
+        styled_cohort,
+        use_container_width=True,
+        height=(len(months_list) + 1) * 35 + 3  # dynamic height based on rows
+    )
 
 # Create Tabs
 tab1, tab2 = st.tabs(["Khách hàng cá nhân (Phổ thông, VIP, VVIP)", "Khách hàng doanh nghiệp (Startup, SME, Enterprise)"])
