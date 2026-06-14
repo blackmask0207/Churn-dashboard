@@ -103,13 +103,6 @@ def render_dashboard(f, tab_id):
     st.subheader("🔔 Hệ thống Cảnh báo tự động")
     alerts = []
     
-    # 1. Data Quality Check
-    if 'Data_Quality_Status' in f.columns:
-        dq_issues = f[f['Data_Quality_Status'] == 'Cần kiểm tra']
-        if not dq_issues.empty:
-            num_issues = len(dq_issues)
-            alerts.append({"type": "warning", "msg": f"Phát hiện **{num_issues}** bản ghi có vấn đề chất lượng dữ liệu (thiếu sót/trùng lặp). Vui lòng rà soát lại Data Pipeline."})
-            
     if len(monthly_kpi) > 1:
         curr_m = monthly_kpi.iloc[-1]
         prev_m = monthly_kpi.iloc[-2]
